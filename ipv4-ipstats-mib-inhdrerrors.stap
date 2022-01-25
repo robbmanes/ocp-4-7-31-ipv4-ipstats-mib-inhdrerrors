@@ -1,0 +1,43 @@
+# this is to track IPSTATS_MIB_INHDRERRORS for IPv4.
+%{
+#include <linux/version.h>
+#include <net/sock.h>
+#include <net/tcp.h>
+#include <net/ip.h>
+#include <linux/skbuff.h>
+
+int ttl;
+int skb_len;
+%}
+
+
+function get_ttl:long(skb:long)
+    %{ /* pure */
+        struct sk_buff *skb = (struct sk_buff *)(long) STAP_ARG_skb;
+        struct iphdr *iph = ip_hdr(skb);
+        STAP_RETVALUE = kread(&(iph->ttl));
+        CATCH_DEREF_FAULT();
+    %}  
+
+function get_skb_len:long(skb:long)
+    %{ /* pure */
+        struct sk_buff *skb = (struct sk_buff *)(long) STAP_ARG_skb;
+        STAP_RETVALUE = kread(&(skb->len));
+        CATCH_DEREF_FAULT();
+    %}  
+
+probe kernel.function("ip_forward") {
+    ttl = get_ttl($skb);
+    if ( ttl <= 1) {
+        printf("%s \n", tz_ctime(gettimeofday_s()));
+        printf("ttl value %d\n", ttl);
+    }
+}
+
+probe kernel.function("ip_rcv") {
+	skb_len = get_skb_len($skb);
+	if (skb_len < 20) {
+        	printf("%s \n", tz_ctime(gettimeofday_s()));
+		printf("possible inhdr_error at ip_rcv...");
+	}
+}
