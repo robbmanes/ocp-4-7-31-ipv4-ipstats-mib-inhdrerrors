@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+ name: ocp-4-7-31-ipv4-ipstats-mib-inhdrerrors
+ labels:
+   app: ocp-4-7-31-ipv4-ipstats-mib-inhdrerrors
+spec:
+  selector:
+    matchLabels:
+      app: inhdrerrors
+  template:
+    metadata:
+      labels:
+       app: inhdrerrors
+    spec:
+      nodeSelector:
+        inhdrerrors: "true"
+      containers:
+      - name: ocp-4-7-31-ipv4-ipstats-mib-inhdrerrors
+        image: quay.io/robbmanes/ocp-4-7-31-ipv4-ipstats-mib-inhdrerrors:latest
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /dev/mem
+          name: mem
+        - mountPath: /lib/modules
+          name: modules
+        securityContext:
+          runAsUser: 0
+          privileged: true
+      volumes:
+      - name: mem
+        hostPath:
+          path: /dev/mem
+          type: CharDevice
+      - name: modules
+        hostPath:
+          path: /lib/modules/
+          type: Directory
